@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Punho · central</title>
+<style>
+  :root { --fundo:#14161a; --cartao:#1f232a; --borda:#2e333c; --texto:#e7e9ee; --fraco:#8b93a1; --acento:#4fa3ff; --ok:#3ecf74; --ruim:#ff6b5b; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--fundo); color:var(--texto); font:15px/1.45 system-ui, sans-serif; }
+  header { padding:18px 24px 6px; display:flex; align-items:baseline; gap:14px; }
+  header h1 { margin:0; font-size:20px; }
+  header span { color:var(--fraco); font-size:13px; }
+  main { display:grid; grid-template-columns:repeat(auto-fill, minmax(330px, 1fr)); gap:16px; padding:16px 24px 40px; }
+  section { background:var(--cartao); border:1px solid var(--borda); border-radius:12px; padding:14px 16px; }
+  section h2 { margin:0 0 10px; font-size:15px; display:flex; justify-content:space-between; align-items:center; }
+  section h2 button { font-size:12px; }
+  .ativo { outline:2px solid var(--acento); }
+  .relogio { background:#000; border-radius:28px; padding:22px 18px; text-align:center; border:3px solid #333; }
+  .linha { font-size:26px; min-height:38px; white-space:nowrap; overflow:hidden; }
+  .botoes { display:flex; justify-content:space-around; margin-top:14px; }
+  .botoes button { font-size:22px; width:64px; height:52px; border-radius:26px; }
+  button { background:#2b313b; color:var(--texto); border:1px solid var(--borda); border-radius:8px; padding:6px 10px; cursor:pointer; font:inherit; }
+  button:hover { border-color:var(--acento); }
+  button.ok { background:#1d4a2f; } button.ruim { background:#5a2420; }
+  input, textarea, select { background:#15181d; color:var(--texto); border:1px solid var(--borda); border-radius:8px; padding:6px 8px; font:inherit; width:100%; }
+  textarea { min-height:90px; font-family:ui-monospace, monospace; font-size:13px; }
+  .fraco { color:var(--fraco); font-size:13px; }
+  .lista { margin:6px 0 0; padding:0; list-style:none; max-height:220px; overflow:auto; }
+  .lista li { padding:4px 0; border-bottom:1px solid var(--borda); font-size:13px; }
+  .menu li { cursor:pointer; padding:5px 6px; border-radius:6px; }
+  .menu li:hover { background:#2a2f38; }
+  .menu li.sel { background:#24344a; }
+  .linha-form { display:flex; gap:8px; margin-top:8px; }
+  .linha-form > * { flex:1; }
+  pre { white-space:pre-wrap; background:#15181d; padding:8px; border-radius:8px; font-size:13px; margin:6px 0; }
+  .grande { font-size:30px; text-align:center; margin:6px 0; }
+</style>
+</head>
+<body>
+<header><h1>Punho · central</h1><span id="status">conectando…</span></header>
+<main>
+
+<section id="c-relogio">
+  <h2>Relógio <button onclick="post('/api/menu')">menu</button></h2>
+  <div class="relogio">
+    <div class="linha" id="linha">…</div>
+    <div class="botoes">
+      <button onclick="botao('anterior')">⏮</button>
+      <button onclick="botao('play')">⏯</button>
+      <button onclick="botao('proxima')">⏭</button>
+    </div>
+  </div>
+  <p class="fraco">No menu: ⏮⏭ escolhem, ⏯ entra. Dentro de um modo: ⏭ próximo, ⏯ age, ⏮ volta ao menu. Teclado: ← espaço →</p>
+  <h2 style="margin-top:12px">Notificações</h2>
+  <ul class="lista" id="notifs"></ul>
+</section>
+
+<section>
+  <h2>Modos</h2>
+  <ul class="lista menu" id="menu"></ul>
+  <p class="fraco">A caixinha escolhe o que aparece no menu do relógio. Clicar no nome entra no modo.
+  Aprovações e Termômetro aparecem sozinhos quando chamam, mesmo desmarcados.</p>
+</section>
+
+<section id="c-servidores">
+  <h2>Servidores <button onclick="modo('servidores','atualizar')">atualizar</button></h2>
+  <ul class="lista" id="sv-lista"></ul>
+  <p class="fraco">Lista em dados/servidores.json ("abrir": endereço que abre no PC ao ligar). No relógio: ⏭ passa, ⏯ liga/desliga.</p>
+</section>
+
+<section id="c-aprovacoes">
+  <h2>Aprovações do Claude</h2>
+  <div id="ap-pendentes"></div>
+  <ul class="lista" id="ap-historico"></ul>
+</section>
+
+<section id="c-quiz">
+  <h2>Flashcards <button onclick="modo('quiz','zerar')">zerar</button></h2>
+  <div class="grande" id="qz-placar"></div>
+  <pre id="qz-pergunta"></pre>
+  <ul class="lista" id="qz-erros"></ul>
+</section>
+
+<section id="c-rpg">
+  <h2>Mestre RPG</h2>
+  <div class="grande" id="rpg-turno"></div>
+  <textarea id="rpg-ordem" placeholder="Nome iniciativa (um por linha)"></textarea>
+  <div class="linha-form">
+    <button onclick="modo('rpg','ordem',{texto:val('rpg-ordem')})">salvar ordem</button>
+    <select id="rpg-dado" onchange="modo('rpg','dado',{dado:this.value})"></select>
+  </div>
+  <ul class="lista" id="rpg-rolagens"></ul>
+</section>
+
+<section id="c-metronomo">
+  <h2>Metrônomo</h2>
+  <div class="grande" id="mt-estado"></div>
+  <div class="linha-form">
+    <input id="mt-bpm" type="number" min="30" max="240" placeholder="bpm">
+    <input id="mt-compasso" type="number" min="1" max="12" placeholder="compasso">
+    <button onclick="modo('metronomo','config',{bpm:val('mt-bpm'),compasso:val('mt-compasso')})">aplicar</button>
+  </div>
+  <div class="linha-form"><button onclick="modo('metronomo','alternar')">tocar / parar</button></div>
+</section>
+
+<section id="c-termometro">
+  <h2>Termômetro <button onclick="modo('termometro','perguntar')">perguntar agora</button></h2>
+  <div class="linha-form">
+    <input id="tm-horarios" placeholder="11:30, 20:30">
+    <button onclick="modo('termometro','horarios',{texto:val('tm-horarios')})">horários</button>
+  </div>
+  <ul class="lista" id="tm-historico"></ul>
+</section>
+
+<section id="c-slides">
+  <h2>Apresentação <a href="/slides" target="_blank" style="color:var(--acento);font-size:13px">abrir tela ↗</a></h2>
+  <div class="grande" id="sl-estado"></div>
+  <div class="linha-form">
+    <input id="sl-caminho" placeholder="arquivo (pdf, pptx, odp) ou link do Google Apresentações">
+    <button onclick="modo('slides','carregar',{caminho:val('sl-caminho')})">carregar</button>
+  </div>
+  <div class="linha-form">
+    <button onclick="modo('slides','ir',{pagina:0})">⏮ início</button>
+    <button onclick="modo('slides','preto')">■ tela preta</button>
+  </div>
+  <p class="fraco">No relógio: ⏭ avança, ⏯ volta um slide, ⏮ volta ao menu.</p>
+</section>
+
+<section id="c-aventura">
+  <h2>Aventura <button onclick="modo('aventura','recomecar')">recomeçar</button></h2>
+  <select id="av-mundo" onchange="modo('aventura','mundo',{mundo:this.value})"></select>
+  <ul class="lista" id="av-historia"></ul>
+  <p class="fraco" id="av-opcoes"></p>
+</section>
+
+<section>
+  <h2>Registro</h2>
+  <ul class="lista" id="log"></ul>
+</section>
+
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const val = id => $(id).value;
+const esc = s => String(s ?? '').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+let preenchido = {};
+
+async function post(url, corpo) {
+  const r = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(corpo || {})});
+  const j = await r.json().catch(() => ({}));
+  if (j.erro) alert(j.erro);
+  atualizar();
+  return j;
+}
+const botao = b => post('/api/botao?b=' + b);
+const modo = (id, acao, dados) => post(`/api/modo/${id}/${acao}`, dados);
+
+document.addEventListener('keydown', e => {
+  if (['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) return;
+  if (e.key === 'ArrowLeft') botao('anterior');
+  if (e.key === 'ArrowRight') botao('proxima');
+  if (e.key === ' ') { e.preventDefault(); botao('play'); }
+});
+
+function preencherUmaVez(id, valor) {
+  if (!preenchido[id]) { $(id).value = valor; preenchido[id] = true; }
+}
+
+function render(s) {
+  $('linha').textContent = s.linha;
+  document.querySelectorAll('section').forEach(x => x.classList.remove('ativo'));
+  if (s.ativo && $('c-' + s.ativo)) $('c-' + s.ativo).classList.add('ativo');
+  $('menu').innerHTML = s.menu.map(m =>
+    `<li class="${m.id === s.ativo ? 'sel' : ''}" style="display:flex;gap:8px;align-items:center">
+       <input type="checkbox" style="width:auto" ${m.visivel ? 'checked' : ''}
+         onclick="event.stopPropagation(); post('/api/visivel', {id:'${m.id}', visivel:this.checked})">
+       <span style="flex:1;${m.visivel ? '' : 'opacity:.45'}" onclick="post('/api/entrar?id=${m.id}')">${esc(m.nome)}${m.id === s.ativo ? ' ●' : ''}</span></li>`).join('');
+  $('notifs').innerHTML = s.notifs.map(n => `<li><b>${esc(n.titulo)}</b><br>${esc(n.texto).replace(/\n/g,'<br>')}</li>`).join('');
+  $('log').innerHTML = s.log.map(l => `<li>${esc(l)}</li>`).join('');
+
+  $('sv-lista').innerHTML = s.modos.servidores.lista.map(v =>
+    `<li style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+       <span>${v.mexendo ? '…' : v.ligado ? '💚' : '❤️'} <b>${esc(v.nome)}</b><br><span class="fraco">${esc(v.url)}</span></span>
+       <button onclick="modo('servidores','alternar',{id:'${v.id}'})">${v.ligado ? 'desligar' : 'ligar'}</button></li>`).join('');
+
+  const ap = s.modos.aprovacoes;
+  $('ap-pendentes').innerHTML = ap.pendentes.length ? ap.pendentes.map(p =>
+    `<pre><b>${esc(p.tool)}</b> · ${p.idade}s\n${esc(p.texto)}\n<span class="fraco">${esc(p.cwd)}</span></pre>
+     <div class="linha-form"><button class="ok" onclick="modo('aprovacoes','decidir',{id:${p.id},decisao:'allow'})">✅ aprovar</button>
+     <button class="ruim" onclick="modo('aprovacoes','decidir',{id:${p.id},decisao:'deny'})">🔥 negar</button></div>`).join('')
+    : '<p class="fraco">Nada pendente. Quando o Claude Code pedir permissão, aparece aqui e no pulso.</p>';
+  $('ap-historico').innerHTML = ap.historico.map(h => `<li>${h.decisao === 'allow' ? '✅' : h.decisao === 'deny' ? '🔥' : '⌛'} ${esc(h.tool)}: ${esc(h.texto)}</li>`).join('');
+
+  const qz = s.modos.quiz;
+  $('qz-placar').textContent = `${qz.acertos}/${qz.feitas}`;
+  $('qz-pergunta').textContent = qz.pergunta || 'Entre no modo pelo relógio pra começar.';
+  $('qz-erros').innerHTML = Object.entries(qz.erros).sort((a,b) => b[1]-a[1]).map(([t,n]) => `<li>🔥 ${esc(t)} ×${n}</li>`).join('');
+
+  const rpg = s.modos.rpg;
+  $('rpg-turno').textContent = rpg.ordem.length ? `R${rpg.rodada} · ${rpg.ordem[rpg.turno][0]}` : 'sem combate';
+  preencherUmaVez('rpg-ordem', rpg.ordem.map(x => `${x[0]} ${x[1]}`).join('\n'));
+  if (!preenchido['rpg-dado']) { $('rpg-dado').innerHTML = rpg.dados.map(d => `<option>${d}</option>`).join(''); preenchido['rpg-dado'] = true; }
+  $('rpg-dado').value = rpg.dado;
+  $('rpg-rolagens').innerHTML = rpg.rolagens.map(r => `<li>${esc(r)}</li>`).join('');
+
+  const mt = s.modos.metronomo;
+  $('mt-estado').textContent = `${mt.tocando ? '●' : '○'} ${mt.bpm} bpm · ${mt.compasso}/4`;
+  preencherUmaVez('mt-bpm', mt.bpm); preencherUmaVez('mt-compasso', mt.compasso);
+
+  const tm = s.modos.termometro;
+  preencherUmaVez('tm-horarios', tm.horarios.join(', '));
+  $('tm-historico').innerHTML = tm.historico.map(h => `<li>${esc(h.quando.replace('T',' ').slice(0,16))} · ${['','😴','😐','🤔','💪','🔥'][h.valor]} ${esc(h.nome)}</li>`).join('') || '<li class="fraco">Sem respostas ainda.</li>';
+
+  const sl = s.modos.slides;
+  $('sl-estado').textContent = sl.total ? (sl.preto ? '■ tela preta' : `${sl.pagina + 1} / ${sl.total}`) : 'sem PDF';
+
+  const av = s.modos.aventura;
+  if (!preenchido['av-mundo']) { $('av-mundo').innerHTML = av.mundos.map(m => `<option>${m}</option>`).join(''); preenchido['av-mundo'] = true; }
+  $('av-mundo').value = av.mundo;
+  $('av-historia').innerHTML = av.historia.map(h => `<li>${esc(h.cena)}${h.escolha ? `<br><b>→ ${esc(h.escolha)}</b>` : ''}</li>`).join('');
+  $('av-opcoes').textContent = av.pensando ? '… pensando' : (av.erro ? 'erro: ' + av.erro : (av.opcoes.length ? 'escolhas: ' + av.opcoes.join(' · ') : ''));
+}
+
+async function atualizar() {
+  try {
+    const r = await fetch('/api/estado');
+    render(await r.json());
+    $('status').textContent = 'ao vivo · ' + new Date().toLocaleTimeString();
+  } catch (e) { $('status').textContent = 'central fora do ar'; }
+}
+atualizar();
+setInterval(atualizar, 1000);
+setInterval(() => fetch('/api/modo/servidores/atualizar', {method:'POST'}), 20000);
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+# segredos e coisas da máquina
+config.json
+token.txt
+chave.jks
+# build
+build/
+punho.apk
+punho.apk.idsig
+__pycache__/
+# estado e dados pessoais (gerados ao usar)
+acoes.log
+dados/*.json
+!dados/servidores.exemplo.json
+dados/eventos.jsonl
+dados/slides/
+dados/logs/

@@ -1,0 +1,7 @@
+[
+ {"id": "site", "nome": "Meu site", "tipo": "processo", "pasta": "~/meu-site",
+  "cmd": ["python3", "-m", "http.server", "8000"], "porta": 8000,
+  "url": "http://localhost:8000", "abrir": "http://localhost:8000"},
+ {"id": "jogo", "nome": "Servidor jogo", "tipo": "servico", "unidade": "meu-jogo", "porta": 25565,
+  "url": "serviço de usuário do systemd: systemctl --user start meu-jogo"}
+]

@@ -1,0 +1,12 @@
+[Unit]
+Description=Punho: central do relógio
+After=network-online.target
+
+[Service]
+WorkingDirectory=PASTA
+ExecStart=/usr/bin/python3 PASTA/central.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

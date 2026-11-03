@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Punho · slides</title>
+<style>
+  html, body { margin:0; height:100%; background:#000; overflow:hidden; cursor:none; }
+  img { width:100vw; height:100vh; object-fit:contain; display:block; }
+  #dica { position:fixed; bottom:12px; left:0; right:0; text-align:center; color:#555; font:14px system-ui; }
+</style>
+</head>
+<body>
+<img id="img" alt="">
+<div id="dica">clique pra tela cheia · controle pelo relógio</div>
+<script>
+let versao = -1;
+document.body.onclick = () => { document.documentElement.requestFullscreen(); document.getElementById('dica').remove(); };
+async function laco() {
+  try {
+    const s = await (await fetch('/api/estado')).json();
+    const sl = s.modos.slides;
+    const chave = `${sl.pdf}:${sl.pagina}:${sl.preto}`;
+    if (chave !== versao) {
+      versao = chave;
+      const img = document.getElementById('img');
+      if (sl.preto || !sl.total) img.removeAttribute('src');
+      else img.src = '/slides/img?k=' + encodeURIComponent(chave);
+    }
+  } catch (e) {}
+  setTimeout(laco, 300);
+}
+laco();
+</script>
+</body>
+</html>

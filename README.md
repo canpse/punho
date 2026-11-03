@@ -1,0 +1,87 @@
+# punho
+
+Um relógio barato e fechado virando controle do computador, por uma brecha no player de música.
+
+O Redmi Watch 5 Active não instala app, não tem SDK e não aceita firmware modificado. Ele só
+sabe mostrar notificações e controlar a música do celular. O punho usa a **tela de Música**
+como um terminal: o título da "faixa" vira a tela, e ⏮ ⏯ ⏭ viram três botões que chegam ao PC.
+Do outro lado, uma central em Python decide o que cada botão faz.
+
+Uso no dia a dia pra passar slides na aula, ligar e desligar os servidores que rodo em casa,
+registrar como estou com um toque, e mais uns modos que fui inventando.
+
+## A engenharia em cima da limitação
+
+O ponto de partida era um "não" atrás do outro:
+
+| Limitação | Como virou ferramenta |
+|---|---|
+| Sistema fechado, sem apps de terceiros nem firmware próprio | O relógio já confia num app: o player de música do celular. Um app Android **finge ser um player** (`MediaSession` com estado "tocando"), e o relógio passa a conversar com ele. |
+| Os botões de música só servem pra música | ⏮ ⏯ ⏭ chegam como `onSkipToPrevious` / `onPlay` / `onSkipToNext`, e o app repassa cada um ao PC. **Três botões de entrada.** |
+| A tela só mostra o nome da faixa | O título da faixa é texto que o app controla, então vira **uma linha de saída**. O artista e a capa nem aparecem nesse modelo (testado). |
+| O Android manda os botões de mídia pra quem tocou áudio por último | O app toca **meio segundo de silêncio** a cada toque e "rouba" os botões do YouTube Music. |
+| A fonte do relógio não tem a maioria dos símbolos | Mapeei por fotos quais emojis e símbolos existem (🔴 ✅ ⭐ 🔥 💚 💛 ❤️ ■ □ ← → ① …; quadrados coloridos e ❌ viram retângulo). `modos/tela.py` tira o que não existe. |
+| Texto comprido rola, e isso é ruim de ler no pulso | Réguas no próprio relógio: cabem 16 dígitos, 9 emojis ou 9 quadrados. Toda linha é cortada nessa medida, e **nunca rola**. |
+| Os botões de volume do relógio não chegam no app | Fica com 3 botões, e a navegação foi desenhada pra isso: no menu ⏮⏭ escolhem e ⏯ entra; num modo ⏭ passa, ⏯ age e ⏮ volta ao menu. Só toques simples, porque toque duplo não funciona bem no relógio. |
+| O app não deveria precisar de atualização a cada ideia | O celular virou **terminal burro**: `POST /botao` e uma espera longa (`GET /espera`) pela próxima linha. Toda a lógica mora no PC, e um modo novo não exige reinstalar nada. |
+| Uma linha é pouco pra conteúdo longo | Texto longo (a pergunta de um flashcard, o pedido de permissão de um agente) vai como **notificação**, que vibra e aparece no relógio. A linha fica pras escolhas. |
+
+## Modos
+
+Cada modo é um arquivo em `modos/` e dá um sentido diferente aos três botões.
+
+- **Apresentação:** ⏭ avança, ⏯ volta um slide. Aceita PDF, pptx/odp (via LibreOffice) e link
+  do Google Apresentações; a tela fica em `/slides`, em tela cheia no navegador.
+- **Servidores:** liga e desliga serviços do systemd de usuário ou scripts avulsos (💚 ligado,
+  ❤️ desligado) e abre a página no navegador do PC quando liga. Lista em `dados/servidores.json`
+  (veja o `servidores.exemplo.json`).
+- **Termômetro:** pergunta "como tá?" em horários marcados; ⏭ escolhe 😴😐🤔💪🔥 e ⏯ registra.
+- **Aprovações:** quando o Claude Code pede permissão, o pulso vibra e ⏯ aprova ou nega
+  (hook em `hooks/`).
+- **Flashcards**, **Mestre de RPG** (iniciativa + dado), **Metrônomo** (pela caixa de som do PC),
+  **Aventura** (o Claude narra, uma escolha por toque), **Próxima prova / Cardápio / Pendências**
+  (leem arquivos de uma pasta pessoal, se configurada) e **Testar**.
+
+No painel (`http://punho.localhost:8787`) dá pra escolher quais modos aparecem no relógio,
+simular os três botões pelo teclado e configurar cada modo.
+
+## Como instalar
+
+Precisa de: um relógio Xiaomi/Redmi cuja tela de Música mostre o título (testado no
+Redmi Watch 5 Active, Mi Fitness), um celular Android, e um PC Linux com Python 3 que o
+celular alcance (mesma rede ou Tailscale).
+
+**No PC:**
+```
+git clone https://github.com/canpse/punho && cd punho
+cp config.exemplo.json config.json      # "host": o IP onde o celular acha o PC
+python3 central.py                      # cria o token.txt e abre a central
+```
+Painel em `http://punho.localhost:8787`. Pra subir sozinho com o computador, com atalho no
+menu do GNOME: `./instalar.sh` (`--remover` desfaz).
+
+**O app** (Java puro, sem Gradle; o token do `token.txt` vai embutido):
+```
+./build.sh        # precisa do Android SDK (platform 34, build-tools 36) em ~/Android/Sdk
+```
+Instale o `punho.apk` no celular, ponha o endereço do PC (`http://IP:8787`), toque em
+**Ligar**, pause qualquer outro player e abra **Música** no relógio.
+
+**Aprovações do Claude Code pelo pulso** (opcional): `python3 hooks/instalar.py`.
+
+## Como funciona por dentro
+
+```
+relógio ──Bluetooth── Mi Fitness ──MediaSession── app punho ──HTTP── central.py ── modos/
+  tela de Música          (do celular)          (finge ser player)    (PC)
+```
+
+- `app/`: o terminal. `PunhoService` mantém a `MediaSession`, repassa os botões (`POST /botao`) e
+  fica esperando a próxima linha ou notificação (`GET /espera`, espera longa de 25 s).
+- `central.py`: menu, troca de modo, interrupções (aprovação, termômetro), painel web, API.
+- `modos/`: um arquivo por modo. `tela.py` decide o que cabe na linha.
+
+O projeto foi feito numa noite com o Claude Code. Eu dirigi: as ideias, os testes no relógio
+e as decisões de uso. Boa parte do código foi escrita pelo agente.
+
+Licença MIT.
