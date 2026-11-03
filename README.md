@@ -98,6 +98,23 @@ Três botões e uma linha parecem pouco, mas do outro lado está um computador i
 - **Outro relógio?** Se a tela de Música do seu mostra o título da faixa, conte se funcionou
   (modelo, app do celular, o que aparece). Ajuda a montar a lista de compatíveis.
 
+### Ideias abertas (pra quem quiser pegar)
+
+Coisas que fariam sentido e que eu não fiz, algumas porque não uso:
+
+- **Home Assistant.** O relógio já tem Alexa, mas e quem usa Home Assistant, ou não quer
+  depender da Alexa? Um modo que liste cenas e dispositivos (⏭ passa, ⏯ liga/desliga) pela API
+  REST do HA deixaria qualquer casa controlável pelo pulso. Provavelmente o modo mais útil pra mais gente.
+- **Streaming / OBS.** Trocar de cena, começar e parar a gravação, silenciar o microfone, pelo
+  obs-websocket. Eu não faço streaming, então quem faz vai acertar melhor o que importa.
+- **Mídia do PC.** Pausar, avançar e mudar o volume do que estiver tocando (`playerctl`, MPRIS).
+- **Timer de dormir.** ⏭ escolhe 15/30/60 min; no fim pausa a mídia e suspende o PC.
+- **Notas do apresentador.** As anotações de cada slide do pptx chegando como notificação, e um
+  cronômetro que vibra quando faltarem 5 minutos.
+- **Marcadores de um botão.** 💡 tive uma ideia, ⭐ fiz algo bom, 🔥 bateu o aperto: o toque é o
+  dado, a hora fica registrada e o padrão aparece depois.
+- **Outros relógios.** Testar e documentar Xiaomi Smart Band, Redmi Watch 4/5, Amazfit e afins.
+
 ## Como foi feito
 
 Numa noite, de umas 21h às 23h30, com o Claude Code. **Todo o código foi escrito pelo agente.**
