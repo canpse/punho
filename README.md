@@ -2,6 +2,14 @@
 
 Um relógio barato e fechado virando controle do computador, por uma brecha no player de música.
 
+> **English:** punho turns a **Redmi Watch 5 Active** (Xiaomi, Mi Fitness, closed RTOS: no
+> third-party apps, no custom firmware, no root) into a remote control for your PC. An Android app
+> pretends to be a music player (`MediaSession`): the watch's **Music screen** shows our text as the
+> "track title", and its ⏮ ⏯ ⏭ buttons reach a Python server on the PC. Uses: slide clicker,
+> turning home servers on/off, one-tap mood logging, flashcards, approving Claude Code permission
+> requests from the wrist. Should work on other Xiaomi/Redmi/Amazfit watches whose Music screen shows
+> the track title: please open an issue if you try it. Docs below are in Portuguese.
+
 O Redmi Watch 5 Active não instala app, não tem SDK e não aceita firmware modificado. Ele só
 sabe mostrar notificações e controlar a música do celular. O punho usa a **tela de Música**
 como um terminal: o título da "faixa" vira a tela, e ⏮ ⏯ ⏭ viram três botões que chegam ao PC.
@@ -22,7 +30,7 @@ O ponto de partida era um "não" atrás do outro:
 | O Android manda os botões de mídia pra quem tocou áudio por último | O app toca **meio segundo de silêncio** a cada toque e "rouba" os botões do YouTube Music. |
 | A fonte do relógio não tem a maioria dos símbolos | Mapeei por fotos quais emojis e símbolos existem (🔴 ✅ ⭐ 🔥 💚 💛 ❤️ ■ □ ← → ① …; quadrados coloridos e ❌ viram retângulo). `modos/tela.py` tira o que não existe. |
 | Texto comprido rola, e isso é ruim de ler no pulso | Réguas no próprio relógio: cabem 16 dígitos, 9 emojis ou 9 quadrados. Toda linha é cortada nessa medida, e **nunca rola**. |
-| Os botões de volume do relógio não chegam no app | Fica com 3 botões, e a navegação foi desenhada pra isso: no menu ⏮⏭ escolhem e ⏯ entra; num modo ⏭ passa, ⏯ age e ⏮ volta ao menu. Só toques simples, porque toque duplo não funciona bem no relógio. |
+| O volume do relógio mexe no volume de verdade do celular | Em tese daria pra capturar como mais dois botões, mas muda o som e atrapalha. Ficam 3 botões, e a navegação foi desenhada pra isso: no menu ⏮⏭ escolhem e ⏯ entra; num modo ⏭ passa, ⏯ age e ⏮ volta ao menu. Só toques simples, porque toque duplo não funciona bem no relógio. |
 | O app não deveria precisar de atualização a cada ideia | O celular virou **terminal burro**: `POST /botao` e uma espera longa (`GET /espera`) pela próxima linha. Toda a lógica mora no PC, e um modo novo não exige reinstalar nada. |
 | Uma linha é pouco pra conteúdo longo | Texto longo (a pergunta de um flashcard, o pedido de permissão de um agente) vai como **notificação**, que vibra e aparece no relógio. A linha fica pras escolhas. |
 
@@ -81,7 +89,20 @@ relógio ──Bluetooth── Mi Fitness ──MediaSession── app punho ─
 - `central.py`: menu, troca de modo, interrupções (aprovação, termômetro), painel web, API.
 - `modos/`: um arquivo por modo. `tela.py` decide o que cabe na linha.
 
-O projeto foi feito numa noite com o Claude Code. Eu dirigi: as ideias, os testes no relógio
-e as decisões de uso. Boa parte do código foi escrita pelo agente.
+## Ideias e contribuições
+
+Três botões e uma linha parecem pouco, mas do outro lado está um computador inteiro.
+
+- **Ideia de modo?** Abra uma issue contando o que os três botões fariam. Um modo é um arquivo em
+  `modos/` (veja `modos/base.py`: `entrar`, `botao`, `estado`, `api`).
+- **Outro relógio?** Se a tela de Música do seu mostra o título da faixa, conte se funcionou
+  (modelo, app do celular, o que aparece). Ajuda a montar a lista de compatíveis.
+
+## Como foi feito
+
+Numa noite, de umas 21h às 23h30, com o Claude Code. **Todo o código foi escrito pelo agente.**
+O meu papel foi a ideia da interceptação, os testes com o relógio no braço (fotos da tela, réguas,
+símbolos) e as decisões de uso. A velocidade muda a relação com o software: a pergunta deixa de
+ser "vale o esforço de programar isso?" e vira "o que eu quero que isso faça?".
 
 Licença MIT.
