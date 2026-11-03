@@ -19,19 +19,23 @@ fi
 
 ./instalar-servico.sh
 
+if command -v google-chrome >/dev/null; then ABRIR="google-chrome --app=http://punho.localhost:8787 --class=punho"
+elif command -v chromium-browser >/dev/null; then ABRIR="chromium-browser --app=http://punho.localhost:8787 --class=punho"
+else ABRIR="xdg-open http://punho.localhost:8787"; fi
 mkdir -p ~/.local/share/applications ~/.config/autostart
 cat > "$APP" <<DESK
 [Desktop Entry]
 Type=Application
 Name=Punho
 Comment=Central do relógio
-Exec=google-chrome --app=http://punho.localhost:8787 --class=punho
+Exec=$ABRIR
 Icon=$AQUI/web/icone.svg
 StartupWMClass=punho
 Categories=Utility;
 DESK
 # ao entrar: espera a central subir e abre
-sed 's|^Exec=.*|Exec=sh -c "for i in $(seq 30); do curl -s -o /dev/null http://127.0.0.1:8787/api/estado \&\& break; sleep 1; done; google-chrome --app=http://punho.localhost:8787 --class=punho"|' "$APP" > "$AUTO"
+ESPERA='for i in $(seq 30); do curl -s -o /dev/null http://127.0.0.1:8787/api/estado \&\& break; sleep 1; done'
+sed "s|^Exec=.*|Exec=sh -c \"$ESPERA; $ABRIR\"|" "$APP" > "$AUTO"
 echo "X-GNOME-Autostart-enabled=true" >> "$AUTO"
 update-desktop-database ~/.local/share/applications 2>/dev/null || true
 echo

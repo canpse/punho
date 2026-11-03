@@ -266,6 +266,12 @@ class Handler(BaseHTTPRequestHandler):
             if img is None:
                 return self._enviar(204, b"")
             return self._enviar(200, img.read_bytes(), "image/png")
+        if url.path == "/punho.apk":  # o link vem de: python3 config.py link-apk
+            apk = AQUI / "punho.apk"
+            if not apk.exists():
+                return self._enviar(404, {"erro": "rode ./build.sh primeiro"})
+            return self._enviar(200, apk.read_bytes(), "application/vnd.android.package-archive",
+                                {"Content-Disposition": 'attachment; filename="punho.apk"'})
         if url.path == "/espera":
             r = C.esperar(int(q.get("versao", ["0"])[0]), int(q.get("notif", ["0"])[0]))
             return self._enviar(200, r)

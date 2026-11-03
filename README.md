@@ -55,6 +55,18 @@ simular os três botões pelo teclado e configurar cada modo.
 
 ## Como instalar
 
+**Peça pro seu agente.** Mande isto pro Claude Code, pro Codex ou pro agente que você usa:
+
+```
+Instala isso pra mim: https://github.com/canpse/punho
+```
+
+O repositório tem um `AGENTS.md` escrito pra ele: o agente confere a máquina, baixa o mínimo do
+Android SDK, compila o app já configurado, sobe a central e te manda um **link pra abrir no
+celular e instalar o app**. Você só mexe no celular e no relógio.
+
+**À mão:**
+
 Precisa de: um relógio Xiaomi/Redmi cuja tela de Música mostre o título (testado no
 Redmi Watch 5 Active, Mi Fitness), um celular Android, e um PC Linux com Python 3 que o
 celular alcance (mesma rede ou Tailscale).
@@ -62,18 +74,17 @@ celular alcance (mesma rede ou Tailscale).
 **No PC:**
 ```
 git clone https://github.com/canpse/punho && cd punho
-cp config.exemplo.json config.json      # "host": o IP onde o celular acha o PC
-python3 central.py                      # cria o token.txt e abre a central
+./build.sh                              # baixa o SDK na 1ª vez e gera o punho.apk
+python3 central.py &                    # a central (cria o token.txt)
+python3 config.py link-apk              # link pra abrir no celular e baixar o app
 ```
+(`config.json` é opcional: sem ele, o app aponta pro IP do Tailscale ou da rede local.)
 Painel em `http://punho.localhost:8787`. Pra subir sozinho com o computador, com atalho no
 menu do GNOME: `./instalar.sh` (`--remover` desfaz).
 
-**O app** (Java puro, sem Gradle; o token do `token.txt` vai embutido):
-```
-./build.sh        # precisa do Android SDK (platform 34, build-tools 36) em ~/Android/Sdk
-```
-Instale o `punho.apk` no celular, ponha o endereço do PC (`http://IP:8787`), toque em
-**Ligar**, pause qualquer outro player e abra **Música** no relógio.
+**No celular:** abra o link, instale o `punho.apk`, toque em **Ligar** (endereço e token já vêm
+preenchidos), pause qualquer outro player e abra **Música** no relógio. O app é Java puro e
+compila sem Gradle; o `./preparar-sdk.sh` instala só o necessário (platform 34, build-tools 36).
 
 **Aprovações do Claude Code pelo pulso** (opcional): `python3 hooks/instalar.py`.
 

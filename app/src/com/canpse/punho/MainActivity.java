@@ -13,7 +13,7 @@ import android.widget.TextView;
 
 /** Tela única: endereço do PC, token, ligar/desligar. */
 public class MainActivity extends Activity {
-    static final String PADRAO_URL = "";  // ex.: http://192.168.0.10:8787 (IP do PC)
+    static final String PADRAO_URL = BuildToken.URL;  // vem do config.json no build
 
     @Override
     protected void onCreate(Bundle b) {
