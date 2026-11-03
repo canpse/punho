@@ -338,7 +338,10 @@ class ServidorV6(ThreadingHTTPServer):
 
 def servir_local():
     """punho.localhost: o navegador pode ir pro 127.0.0.1 ou pro ::1, então atende os dois."""
-    for classe, ende in ((ThreadingHTTPServer, "127.0.0.1"), (ServidorV6, "::1")):
+    locais = [(ServidorV6, "::1")]
+    if HOST not in ("0.0.0.0", ""):  # com 0.0.0.0 o 127.0.0.1 já está incluído
+        locais.insert(0, (ThreadingHTTPServer, "127.0.0.1"))
+    for classe, ende in locais:
         try:
             srv = classe((ende, PORTA), Handler)
             threading.Thread(target=srv.serve_forever, daemon=True).start()
